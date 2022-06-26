@@ -7,8 +7,8 @@
  *     1. Redistributions of source code must retain the above copyright
  *        notice, this list of conditions and the following disclaimer.
  *
- *     2. Redistributions in binary form must reproduce the above copyright notice,
- *        this list of conditions and the following disclaimer in the
+ *     2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
  *        documentation and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY Florian Büstgens ''AS IS'' AND ANY
@@ -26,6 +26,16 @@
 #ifndef XORG_H
 #define XORG_H
 
+#include <X11/Xlib.h>
 
+typedef struct {
+	int screen;
+	Window root, win;
+	Pixmap pmap;
+	unsigned long colors[2];
+} XLock;
+
+XLock **xorg_lockdown(Display *dpy);
+XLock *xorg_lockdown_screen(Display *dpy, int screen);
 
 #endif /* XORG_H */

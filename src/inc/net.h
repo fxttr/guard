@@ -7,8 +7,8 @@
  *     1. Redistributions of source code must retain the above copyright
  *        notice, this list of conditions and the following disclaimer.
  *
- *     2. Redistributions in binary form must reproduce the above copyright notice,
- *        this list of conditions and the following disclaimer in the
+ *     2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
  *        documentation and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY Florian Büstgens ''AS IS'' AND ANY
@@ -26,6 +26,8 @@
 #ifndef NET_H
 #define NET_H
 
+#include "lock.h"
 
+Lock *net_lockup(Lock *lock);
 
 #endif /* NET_H */

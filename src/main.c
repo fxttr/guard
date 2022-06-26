@@ -7,8 +7,8 @@
  *     1. Redistributions of source code must retain the above copyright
  *        notice, this list of conditions and the following disclaimer.
  *
- *     2. Redistributions in binary form must reproduce the above copyright notice,
- *        this list of conditions and the following disclaimer in the
+ *     2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
  *        documentation and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY Florian Büstgens ''AS IS'' AND ANY
@@ -23,7 +23,59 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-int main(void)
+#include <sys/_types.h>
+
+#include <errno.h>
+#include <pwd.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+static void die(const char *err, ...);
+static const char *get_passwd(void);
+
+static void
+die(const char *err, ...)
 {
-  return 0;
+	__va_list ap;
+
+	va_start(ap, err);
+	vfprintf(stderr, err, ap);
+	va_end(ap);
+
+	exit(EXIT_FAILURE);
+}
+
+static const char *
+get_passwd(void)
+{
+	errno = 0;
+	struct passwd *pw = getpwuid(getuid());
+
+	if (!pw) {
+		if (errno) {
+			die("guard: FAILURE: %s\n", strerror(errno));
+		} else {
+			die("guard: Could not retrieve password.\n");
+		}
+	}
+
+	endpwent();
+
+	if (geteuid() == 0) {
+		if (!(geteuid() != pw->pw_gid && setgid(pw->pw_gid) < 0)) {
+			if (setuid(pw->pw_uid) < 0)
+				die("guard: Cannot drop privileges.\n");
+		}
+	}
+
+	return pw->pw_passwd;
+}
+
+int
+main(void)
+{
+	return 0;
 }
