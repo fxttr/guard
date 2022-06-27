@@ -26,8 +26,9 @@
 #ifndef USB_H
 #define USB_H
 
-#include "lock.h"
+typedef struct USBLock {
+} USBLock;
 
-Lock *usb_lockup(Lock *lock);
+USBLock *usb_lockdown();
 
 #endif /* USB_H */

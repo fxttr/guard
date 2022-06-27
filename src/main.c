@@ -26,12 +26,21 @@
 #include <sys/_types.h>
 
 #include <errno.h>
+#include <pthread.h>
 #include <pwd.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "X11/Xlib.h"
+#include "inc/xorg.h"
+
+typedef struct xorg_thread_data {
+	XLock **locks;
+	Display *dpy;
+} xorg_thread_data;
 
 static void die(const char *err, ...);
 static const char *get_passwd(void);
@@ -74,8 +83,35 @@ get_passwd(void)
 	return pw->pw_passwd;
 }
 
+void *
+lock_xorg(void *args)
+{
+	xorg_thread_data *data = (xorg_thread_data *)args;
+
+	XLock **locks = xorg_lockdown(data->dpy);
+
+	data->locks = locks;
+
+	pthread_exit(NULL);
+}
+
 int
 main(void)
 {
+	pthread_t xorg;
+	xorg_thread_data xorg_thread_data;
+
+	Display *dpy = XOpenDisplay(0);
+	xorg_thread_data.dpy = dpy;
+
+	pthread_create(&xorg, NULL, lock_xorg, (void *)&xorg_thread_data);
+	pthread_join(xorg, NULL);
+
+	usleep(3000);
+
+	for (size_t i = 0; xorg_thread_data.locks[i] != NULL; ++i) {
+		xorg_unlock_screen(dpy, xorg_thread_data.locks[i]);
+	}
+
 	return 0;
 }

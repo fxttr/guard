@@ -28,14 +28,13 @@
 
 #include <X11/Xlib.h>
 
-typedef struct {
+typedef struct XLock {
 	int screen;
 	Window root, win;
-	Pixmap pmap;
-	unsigned long colors[2];
 } XLock;
 
 XLock **xorg_lockdown(Display *dpy);
 XLock *xorg_lockdown_screen(Display *dpy, int screen);
+void xorg_unlock_screen(Display *dpy, XLock *lock);
 
 #endif /* XORG_H */

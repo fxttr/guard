@@ -28,7 +28,9 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <errno.h>
+#include <pwd.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "inc/xorg.h"
 
@@ -92,5 +94,48 @@ xorg_lockdown_screen(Display *dpy, int screen)
 	    DefaultVisual(dpy, lock->screen), CWOverrideRedirect | CWBackPixel,
 	    &wa);
 
+	XSetWMName(dpy, lock->win, &prop);
+
+	XClassHint *hint = XAllocClassHint();
+	if (hint != NULL) {
+		hint->res_name = "guard";
+		hint->res_class = "guard";
+		XSetClassHint(dpy, lock->win, hint);
+		XFree(hint);
+	}
+
+	XMapRaised(dpy, lock->win);
+
+	for (size_t i = 1000; i > 0; --i) {
+		int field = ButtonPressMask | ButtonReleaseMask |
+		    PointerMotionMask;
+
+		int grab_pointer = XGrabPointer(dpy, lock->root, False, field,
+		    GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+
+		int grab_keyboard = XGrabKeyboard(dpy, lock->root, True,
+		    GrabModeAsync, GrabModeAsync, CurrentTime);
+
+		if (grab_pointer == GrabSuccess && grab_keyboard == GrabSuccess)
+			break;
+
+		usleep(1000);
+	}
+
+	XSelectInput(dpy, lock->root, SubstructureNotifyMask);
+
 	return lock;
+}
+
+void
+xorg_unlock_screen(Display *dpy, XLock *lock)
+{
+	if (dpy == NULL || lock == NULL)
+		return;
+
+	XUngrabPointer(dpy, CurrentTime);
+
+	XDestroyWindow(dpy, lock->win);
+
+	free(lock);
 }

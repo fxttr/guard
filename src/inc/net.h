@@ -26,8 +26,9 @@
 #ifndef NET_H
 #define NET_H
 
-#include "lock.h"
+typedef struct NetLock {
+} NetLock;
 
-Lock *net_lockup(Lock *lock);
+NetLock *net_lockdown();
 
 #endif /* NET_H */

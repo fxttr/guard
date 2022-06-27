@@ -13,7 +13,7 @@ OBJ != find . -name *.c | sed -e 's/\.c/\.o/g' | sed 's|^./src/||'
 WARN= -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-declarations -Wformat-security -Wformat -Werror=format-security -Wstack-protector
 SEC= -march=native -fstack-protector-all --param ssp-buffer-size=4 -fpie -ftrapv -D_FORTIFY_SOURCE=2
 CFLAGS= ${SEC} ${WARN} -std=c99 -pedantic -O2 -I/usr/local/include 
-LDFLAGS= -L/usr/local/lib -lX11 -Wl,-z,relro,-z,now -pie
+LDFLAGS= -L/usr/local/lib -lX11 -Wl,-z,relro,-z,now -pie -pthread
 
 .PHONY: all
 all: ${OBJ}
