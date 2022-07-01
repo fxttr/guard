@@ -24,11 +24,13 @@
  */
 
 #include <sys/_types.h>
+#include <sys/procctl.h>
 
+#include <capsicum_helpers.h>
+#include <err.h>
 #include <errno.h>
 #include <pthread.h>
 #include <pwd.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,20 +44,7 @@ typedef struct xorg_thread_data {
 	Display *dpy;
 } xorg_thread_data;
 
-static void die(const char *err, ...);
 static const char *get_passwd(void);
-
-static void
-die(const char *err, ...)
-{
-	__va_list ap;
-
-	va_start(ap, err);
-	vfprintf(stderr, err, ap);
-	va_end(ap);
-
-	exit(EXIT_FAILURE);
-}
 
 static const char *
 get_passwd(void)
@@ -64,11 +53,7 @@ get_passwd(void)
 	struct passwd *pw = getpwuid(getuid());
 
 	if (!pw) {
-		if (errno) {
-			die("guard: FAILURE: %s\n", strerror(errno));
-		} else {
-			die("guard: Could not retrieve password.\n");
-		}
+		err(1, "guard: Could not retrieve password");
 	}
 
 	endpwent();
@@ -76,7 +61,7 @@ get_passwd(void)
 	if (geteuid() == 0) {
 		if (!(geteuid() != pw->pw_gid && setgid(pw->pw_gid) < 0)) {
 			if (setuid(pw->pw_uid) < 0)
-				die("guard: Cannot drop privileges.\n");
+				err(1, "Cannot drop privileges");
 		}
 	}
 
@@ -98,6 +83,18 @@ lock_xorg(void *args)
 int
 main(void)
 {
+	// setup
+	int pid = getpid();
+	int pid_flags = PPROT_SET | PPROT_INHERIT;
+
+	// disable OOM killer
+	if (procctl(P_PID, pid, PROC_SPROTECT, &pid_flags) == -1)
+		err(1, "Could not disable OOM killer");
+
+	// enter capsicum
+	if (caph_limit_stdio() < 0 && caph_enter() < 0)
+		err(1, "Could enter capsicum");
+
 	pthread_t xorg;
 	xorg_thread_data xorg_thread_data;
 
